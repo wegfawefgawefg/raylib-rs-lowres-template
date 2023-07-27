@@ -2,6 +2,7 @@ use glam::{IVec2, UVec2, Vec2};
 use raylib::prelude::*;
 
 pub const FRAMES_PER_SECOND: u32 = 60;
+
 pub struct State {
     pub running: bool,
     pub time_since_last_update: f32,
@@ -35,10 +36,8 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
     let offset = center / 4.0;
 
     for i in 0..3 {
-        // let rot = glam::Vec2::new(0.0, 1.0).rotate(angle + i as f32 * 90.0); this is wrong .rotate expects a vec2 in rust
         let rot = glam::Mat2::from_angle(angle + i as f32 * 90.0);
         let rect_pos_rotated = rot * offset + center;
-        // size should be sin of time scaled to 0-1 * 64
 
         let size =
             (((d.get_time() as f32 + i as f32 * 1.0) * 2.0).sin() + 1.0) / 2.0 * offset.y + 4.0;
