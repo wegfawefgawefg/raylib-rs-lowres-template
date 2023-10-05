@@ -36,7 +36,7 @@ pub fn process_events_and_input(rl: &mut RaylibHandle, state: &mut State) {
 
 pub fn step(_rl: &mut RaylibHandle, _rlt: &mut RaylibThread, _state: &mut State) {}
 
-pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
+pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>, plane: &mut Model) {
     d.draw_text("Low Res Sketch!", 12, 12, 12, Color::WHITE);
     let mouse_pos = d.get_mouse_position();
     d.draw_circle(mouse_pos.x as i32, mouse_pos.y as i32, 6.0, Color::GREEN);
@@ -65,4 +65,27 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
             Color::GOLD,
         );
     }
+
+    let mut pitch = 0.0f32;
+    let mut roll = 0.0f32;
+    let mut yaw = 0.0f32;
+
+    roll = d3.get_time() as f32 * 100.0;
+    // pitch = d3.get_time() as f32 * 100.0;
+    // yaw = d3.get_time() as f32 * 100.0;
+    let mat = Matrix::rotate_xyz(Vector3::new(
+        pitch.to_radians(),
+        yaw.to_radians(),
+        roll.to_radians(),
+    ));
+
+    let size = 0.5 + (((d3.get_time() as f32 * 1.0) * 2.0).sin() + 1.0) / 2.0 * 1.0 + 0.0;
+
+    plane.set_transform(&mat);
+    d3.draw_model(
+        plane,
+        Vector3::new(0.0, 0.0, 0.0),
+        0.05 * size,
+        Color::WHITE,
+    ); // Draw 3d model with texture
 }

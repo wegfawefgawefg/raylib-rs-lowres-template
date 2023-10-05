@@ -1,6 +1,7 @@
 use glam::{IVec2, UVec2};
 use raylib::prelude::*;
 use raylib::{ffi::SetTraceLogLevel, prelude::TraceLogLevel};
+use std::env;
 
 mod sketch;
 
@@ -10,6 +11,29 @@ fn main() {
     let (mut rl, mut rlt) = raylib::init().title("raylib-rs-lowres-template").build();
     unsafe {
         SetTraceLogLevel(TraceLogLevel::LOG_WARNING as i32);
+    }
+
+    let mut plane = rl
+        .load_model(&rlt, "src/3d_template/assets/plane.obj")
+        .unwrap();
+    match env::current_dir() {
+        Ok(path) => println!("Current directory is: {}", path.display()),
+        Err(e) => println!("Error getting current directory: {}", e),
+    }
+    {
+        let materials = plane.materials_mut();
+        let mat = &mut materials[0];
+        let mats = mat.maps_mut();
+        let texture = unsafe {
+            let mut t = rl
+                .load_texture(&rlt, "src/3d_template/assets/plane_diffuse.png")
+                .unwrap();
+            t.gen_texture_mipmaps();
+            t.unwrap()
+            // Because we are unwraping we are required to manually unload the texture and can't rely on Drop.
+            // We don't do that here since we don't need to unload until the end of main anyway.
+        };
+        mats[raylib::consts::MaterialMapIndex::MATERIAL_MAP_ALBEDO as usize].texture = texture;
     }
 
     let window_dims = UVec2::new(1280, 720);
@@ -48,7 +72,7 @@ fn main() {
             let low_res_draw_handle =
                 &mut draw_handle.begin_texture_mode(&rlt, &mut render_texture);
             low_res_draw_handle.clear_background(Color::BLACK);
-            sketch::draw(&state, low_res_draw_handle);
+            sketch::draw(&state, low_res_draw_handle, &mut plane);
         }
         scale_and_blit_render_texture_to_window(
             &mut draw_handle,
