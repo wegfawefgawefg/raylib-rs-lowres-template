@@ -23,7 +23,7 @@ fn main() {
 
     center_window(&mut rl, window_dims);
     let mouse_scale = dims.as_vec2() / window_dims.as_vec2();
-    rl.set_mouse_scale(mouse_scale.x as f32, mouse_scale.y as f32);
+    rl.set_mouse_scale(mouse_scale.x, mouse_scale.y);
 
     let mut render_texture = rl
         .load_render_texture(&rlt, dims.x, dims.y)

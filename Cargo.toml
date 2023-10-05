@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "2d_template"
+path = "src/2d_template/main.rs"
+
+[[bin]]
+name = "3d_template"
+path = "src/3d_template/main.rs"
+
 [dependencies]
 glam = "0.24.0"
 rand = "0.8.5"
