@@ -1,4 +1,4 @@
-use glam::{IVec2, UVec2};
+use glam::{IVec2, UVec2, Vec2};
 use raylib::prelude::*;
 use raylib::{ffi::SetTraceLogLevel, prelude::TraceLogLevel};
 
@@ -60,11 +60,11 @@ fn main() {
 }
 
 pub fn center_window(rl: &mut raylib::RaylibHandle, window_dims: UVec2) {
-    let screen_dims = UVec2::new(rl.get_screen_width() as u32, rl.get_screen_height() as u32);
+    let screen_dims = IVec2::new(rl.get_screen_width(), rl.get_screen_height());
     let screen_center = screen_dims / 2;
-    let window_center = window_dims / 2;
-    let offset = window_center - screen_center;
-    rl.set_window_position(offset.x as i32, offset.y as i32);
+    let window_center = window_dims.as_ivec2() / 2;
+    let offset = IVec2::new(screen_center.x, screen_center.y + window_center.y);
+    rl.set_window_position(offset.x, offset.y);
     rl.set_target_fps(144);
 }
 
