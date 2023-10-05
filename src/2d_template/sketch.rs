@@ -1,4 +1,4 @@
-use glam::{IVec2, UVec2, Vec2};
+use glam::Vec2;
 use raylib::prelude::*;
 
 pub const FRAMES_PER_SECOND: u32 = 60;

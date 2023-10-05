@@ -1,4 +1,4 @@
-use glam::{IVec2, UVec2, Vec2};
+use glam::{IVec2, UVec2};
 use raylib::prelude::*;
 use raylib::{ffi::SetTraceLogLevel, prelude::TraceLogLevel};
 
@@ -48,7 +48,7 @@ fn main() {
             let low_res_draw_handle =
                 &mut draw_handle.begin_texture_mode(&rlt, &mut render_texture);
             low_res_draw_handle.clear_background(Color::BLACK);
-            sketch::draw(&mut state, low_res_draw_handle);
+            sketch::draw(&state, low_res_draw_handle);
         }
         scale_and_blit_render_texture_to_window(
             &mut draw_handle,
