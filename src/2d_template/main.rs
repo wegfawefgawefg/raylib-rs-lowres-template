@@ -21,9 +21,9 @@ fn main() {
         rl.set_window_size(rl.get_screen_width(), rl.get_screen_height());
     }
 
-    center_window(&mut rl, window_dims);
     let mouse_scale = dims.as_vec2() / window_dims.as_vec2();
     rl.set_mouse_scale(mouse_scale.x, mouse_scale.y);
+    center_window(&mut rl, window_dims.x as i32, window_dims.y as i32);
 
     let mut render_texture = rl
         .load_render_texture(&rlt, dims.x, dims.y)
@@ -59,15 +59,6 @@ fn main() {
     }
 }
 
-pub fn center_window(rl: &mut raylib::RaylibHandle, window_dims: UVec2) {
-    let screen_dims = IVec2::new(rl.get_screen_width(), rl.get_screen_height());
-    let screen_center = screen_dims / 2;
-    let window_center = window_dims.as_ivec2() / 2;
-    let offset = IVec2::new(screen_center.x, screen_center.y + window_center.y);
-    rl.set_window_position(offset.x, offset.y);
-    rl.set_target_fps(144);
-}
-
 pub fn scale_and_blit_render_texture_to_window(
     draw_handle: &mut RaylibDrawHandle,
     render_texture: &mut RenderTexture2D,
@@ -100,4 +91,33 @@ pub fn scale_and_blit_render_texture_to_window(
         0.0,
         Color::WHITE,
     );
+}
+
+pub fn center_window(rl: &mut RaylibHandle, width: i32, height: i32) {
+    // Get the index of the monitor the window is currently on.
+    let monitor = get_current_monitor();
+
+    // Get the dimensions and position of that monitor.
+    let monitor_width = get_monitor_width(monitor);
+    let monitor_height = get_monitor_height(monitor);
+    let monitor_pos = get_monitor_position(monitor);
+
+    // Safely get the monitor's name by matching on the Result.
+    let monitor_name = match get_monitor_name(monitor) {
+        Ok(name) => name,
+        Err(_) => "N/A".to_string(),
+    };
+
+    // Print some useful monitor info for debugging.
+    println!(
+        "Centering on Monitor {}: '{}' ({}x{}) at ({}, {})",
+        monitor, monitor_name, monitor_width, monitor_height, monitor_pos.x, monitor_pos.y
+    );
+
+    // Calculate the top-left position for the window to be centered on the current monitor.
+    let x = monitor_pos.x as i32 + (monitor_width - width) / 2;
+    let y = monitor_pos.y as i32 + (monitor_height - height) / 2;
+
+    // Set the window's new position.
+    rl.set_window_position(x, y);
 }

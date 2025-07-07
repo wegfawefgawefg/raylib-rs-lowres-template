@@ -13,7 +13,18 @@ path = "src/2d_template/main.rs"
 name = "3d_template"
 path = "src/3d_template/main.rs"
 
+[[bin]]
+name = "2d_template_standard_res"
+path = "src/2d_template_standard_res/main.rs"
+
+[[bin]]
+name = "2d_with_egui"
+path = "src/2d_with_egui/main.rs"
+
+
 [dependencies]
-glam = "0.24.0"
-rand = "0.8.5"
-raylib = "3.7.0"
+egui_glow = { version = "0.31", default-features = false }
+raylib = "5.5.1"
+glow = "0.16"
+egui = "0.31"
+glam = "0.30"
