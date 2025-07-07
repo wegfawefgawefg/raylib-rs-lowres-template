@@ -1,51 +1,59 @@
-//! Minimal raylib ✕ egui (OpenGL) bridge.
-//! Tested with raylib-rs 5.5.1 and egui_glow 0.31.
+// src/2d_with_egui/main.rs
+//! minimal raylib ✕ egui example (raylib-rs 5.5.1 / egui_glow 0.31)
 
 use std::{ffi::CString, sync::Arc};
 
-use egui::{Context, Event, PointerButton, RawInput};
+use egui::{Event, PointerButton, Pos2, RawInput};
 use egui_glow::Painter;
-use glam::{Mat2, Vec2};
+use glam::Vec2;
 use glow::HasContext;
 use raylib::prelude::*;
 
-mod sketch; // small self-contained state/update/draw module
+mod sketch;
 use sketch::{draw, egui_ui, step, State};
 
 fn main() {
-    /* ---- boot raylib ---------------------------------------------------- */
+    /* --- boot raylib --------------------------------------------------- */
     let (mut rl, th) = raylib::init()
         .size(1280, 720)
-        .title("raylib + egui minimal template")
+        .title("raylib + egui minimal")
         .vsync()
         .build();
     unsafe { raylib::ffi::SetTraceLogLevel(raylib::consts::TraceLogLevel::LOG_WARNING as _) };
 
-    /* ---- grab GL function loader for glow ------------------------------ */
+    /* --- make sure rlgl has all GL entry-points ------------------------ */
+    unsafe {
+        // This call is what raylib itself does internally on desktop.
+        // We repeat it so that *glow* can see the same GL symbols later on.
+        raylib::ffi::rlLoadExtensions(Some(raylib::ffi::glfwGetProcAddress));
+    }
+
+    /* --- create a glow::Context that asks GLFW for symbols ------------ */
     let gl = unsafe {
         glow::Context::from_loader_function(|s| {
-            let c = CString::new(s).unwrap();
-            raylib::ffi::rlGetProcAddress(c.as_ptr()) as *const _
+            let cs = CString::new(s).unwrap();
+            unsafe { raylib::ffi::glfwGetProcAddress(cs.as_ptr()) as *const _ }
         })
     };
-    let painter =
-        Painter::new(Arc::new(gl), "", None, false).expect("failed to create egui_glow painter");
-    let mut painter = Some(painter); // will move into loop
+    let mut painter =
+        Painter::new(Arc::new(gl), "", None, false).expect("could not create egui_glow painter");
+    let mut egui_ctx = egui::Context::default();
 
-    let mut egui_ctx = Context::default();
+    /* --- game state ---------------------------------------------------- */
     let mut state = State::new();
 
-    /* ---- main loop ------------------------------------------------------ */
+    /* --- main loop ----------------------------------------------------- */
     while state.running && !rl.window_should_close() {
-        /* feed a *minimum* RawInput to egui ------------------------------ */
+        /* feed *minimal* input to egui ------------------------------- */
         let mut raw = RawInput::default();
         let mp = rl.get_mouse_position();
-        raw.events.push(Event::PointerMoved([mp.x, mp.y].into()));
+        raw.events
+            .push(Event::PointerMoved(Pos2::new(mp.x as f32, mp.y as f32)));
         if rl.is_mouse_button_pressed(MouseButton::MOUSE_BUTTON_LEFT)
             || rl.is_mouse_button_released(MouseButton::MOUSE_BUTTON_LEFT)
         {
             raw.events.push(Event::PointerButton {
-                pos: [mp.x, mp.y].into(),
+                pos: Pos2::new(mp.x as f32, mp.y as f32),
                 button: PointerButton::Primary,
                 pressed: rl.is_mouse_button_down(MouseButton::MOUSE_BUTTON_LEFT),
                 modifiers: Default::default(),
@@ -56,33 +64,33 @@ fn main() {
             [rl.get_screen_width() as f32, rl.get_screen_height() as f32].into(),
         ));
 
-        /* egui frame ------------------------------------------------------ */
+        /* egui frame ------------------------------------------------- */
         let out = egui_ctx.run(raw, |ctx| egui_ui(ctx, &mut state));
 
-        /* fixed-timestep update ------------------------------------------ */
+        /* fixed-step update ----------------------------------------- */
         let dt = rl.get_frame_time();
         step(&mut state, dt);
 
-        /* normal raylib drawing ------------------------------------------ */
+        /* raylib drawing -------------------------------------------- */
         let mut d = rl.begin_drawing(&th);
         d.clear_background(Color::BLACK);
         draw(&state, &mut d);
 
-        /* paint egui on top ---------------------------------------------- */
+        /* paint egui on top ----------------------------------------- */
         let dims = [rl.get_screen_width() as u32, rl.get_screen_height() as u32];
-        let painter = painter.as_mut().unwrap();
 
-        // upload any new textures
+        // upload textures that egui asked for
         for (id, delta) in &out.textures_delta.set {
             painter.set_texture(*id, delta);
         }
 
-        // tessellate & paint
         let clipped = egui_ctx.tessellate(out.shapes, 1.0);
-        unsafe { painter.gl().disable(glow::SCISSOR_TEST) }; // raylib left it enabled
+
+        // raylib left scissor test enabled – egui disables it for its own pass
+        unsafe { painter.gl().disable(glow::SCISSOR_TEST) };
         painter.paint_primitives(dims, egui_ctx.pixels_per_point(), &clipped);
 
-        // cleanup freed textures
+        // remove textures that egui wants to free
         for id in &out.textures_delta.free {
             painter.free_texture(*id);
         }
